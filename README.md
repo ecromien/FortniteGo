@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 You are Here
 ====
 
@@ -146,3 +147,7 @@ Then I made a rule for the div:
 
 Like many things in programming, finding this and making a solution took way longer than it should have!
 
+=======
+# FortniteGo
+FortniteGo Prototype / prog8010 individual assignment 1. 
+>>>>>>> 44214ddba1c2fd5584ae72b6c85ffa2bfd9b1d6e
