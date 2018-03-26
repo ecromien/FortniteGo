@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns     = "http://www.w3.org/ns/widgets"
+        xmlns:gap = "http://phonegap.com/ns/1.0"
+        id        = "@APPPACKAGE"
+        version   = "@APPVERSION">
+    <name>@APPNAME</name>
+
+    <description>
+       Captivate E-Learning Course
+    </description>
+
+    @APPPLATFORMS
+
+<plugin name="cordova-plugin-device" />
+<plugin name="cordova-plugin-file" />
+<plugin name="cordova-plugin-inappbrowser" />
+<plugin name="cordova-plugin-statusbar" />
+
+    @GEOLOCATION
+
+    <preference name="AndroidPersistentFileLocation" value="Internal" />
+    <preference name="permissions" value="none" />
+    <preference name="phonegap-version" value="cli-6.5.0" />
+    <preference name="target-device"    value="universal" />
+    <preference name="fullscreen"       value="false" />
+
+</widget>
