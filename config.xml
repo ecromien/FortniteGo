@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
-        id        = "@APPPACKAGE"
-        version   = "@APPVERSION">
-    <name>@APPNAME</name>
+        id        = "ecromienFortniteGo"
+        version   = "1.0">
+    <name>FortniteGo</name>
 
     <description>
        Captivate E-Learning Course
