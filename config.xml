@@ -1,20 +1,27 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<widget xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0" id="com.salesucation.youarehere" version="0.0.3">
+<?xml version="1.0" encoding="UTF-8"?>
 
-    <name>You are here</name>
+-<widget version="@APPVERSION" id="@APPPACKAGE" xmlns:gap="http://phonegap.com/ns/1.0" xmlns="http://www.w3.org/ns/widgets">
 
-    <description>
-        You are here example
-    </description>
-    <content src="www/index.html" />
-    <author href="https://rhildred.github.io" email="rhildred@gmail.com">
-        Rich Hildred and Mobile App Class of 2015
-    </author>
-    <!-- We'll include the Barcode plugin as an example -->
-    <preference name="phonegap-version" value="3.7.0" />
-    <plugin name="org.apache.cordova.geolocation" />
-    <plugin name="org.apache.cordova.device" />
-    <feature name="Geolocation">
-        <param name="ios-package" value="CDVLocation" />
-    </feature>
+<name>@APPNAME</name>
+
+<description> Captivate E-Learning Course </description>
+@APPPLATFORMS 
+<plugin name="cordova-plugin-device"/>
+
+<plugin name="cordova-plugin-file"/>
+
+<plugin name="cordova-plugin-inappbrowser"/>
+
+<plugin name="cordova-plugin-statusbar"/>
+@GEOLOCATION 
+<preference name="AndroidPersistentFileLocation" value="Internal"/>
+
+<preference name="permissions" value="none"/>
+
+<preference name="phonegap-version" value="cli-6.5.0"/>
+
+<preference name="target-device" value="universal"/>
+
+<preference name="fullscreen" value="false"/>
+
 </widget>
