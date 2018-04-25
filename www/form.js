@@ -67,7 +67,7 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi, 
             google.maps.event.trigger(map, "resize");
 
         },
-        userMessage: "Edit circle then hit start match.",
+        userMessage: "Welcome! Join or Create a Match.",
         map: { center: { latitude: 45, longitude: -73 }, zoom: 14 }, //initalize map location structure
         circle: { center: { latitude: 45, longitude: -73 }, radius: 1000 }, //initalize circle
         nextCircle: { center: { latitude: 45, longitude: -73 }, radius: 998 }, //initalize circle (2 less as a test to see if fixes line color)
@@ -87,12 +87,15 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi, 
         moveTime: false,
         existsMessage: "",
         isAdmin: false,
+        editCircleLock : false,
         createNewMatch: function(matchName){
            // $scope.matches[uuid.v4()] = { name: matchName};
            //  $scope.matches.$save();
             baseRef.child('matches/' + matchName).set({name: matchName, admin: $scope.model.uname});
             baseRef.child('matches/' + matchName + '/players/' + $scope.model.uname).set({name: $scope.model.uname, status: 'alive'});
             $scope.isAdmin = true;
+            $scope.existsMessage = "Match created! You are the admin.";
+            $scope.userMessage= "Edit circle then hit start match.";
             //$scope.matchName = matchName;
         },
         findMatch: function(matchName){
@@ -110,10 +113,20 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi, 
         },
         particpateInMatch: function(matchName){ //for non admin players
             //firebase listener event
+            var shownAlready = false;
             baseRef.child('matches/' + matchName + '/gameObjects').on("value", snapshot => {
                 const gameObj = snapshot.val();
-                $scope.userMessage = "Match Underway";
+                
                 if (gameObj){
+                    if(!shownAlready){
+                        $scope.userMessage = "Match Underway";
+                        shownAlready = true;
+                    }
+                    //trigger reset users health if circle is made bigger
+                    if(gameObj.circle.radius > $scope.circle.radius){
+                        $scope.health = 100;
+                        $scope.userMessage="Waiting on admin for match to start again";
+                    }
                     $scope.circle.center.latitude = gameObj.circle.lat;
                     $scope.circle.center.longitude =  gameObj.circle.long;
                     $scope.circle.radius = gameObj.circle.radius;
@@ -122,20 +135,32 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi, 
                     $scope.nextCircle.radius = gameObj.nextCircle.radius;
                     console.log($scope.circle.radius); //for debug
                     $scope.getInCircle(); //check if in circle
+                    $scope.$apply();
                 }else{
-                    $scope.existsMessage="Match Not Yet Started";
+                    $scope.userMessage="Waiting for match to start";
+                    $scope.$apply();
+                }
+             });
+             baseRef.child('matches/' + matchName + '/clock').on("value", snapshot => {
+                const clockDB = snapshot.val();                
+                if (clockDB){
+                    $scope.moveCircleTimer = clockDB.time;
+                    $scope.$apply();
                 }
              });
            
         },
         startMatch: function(){ //for admin to run
                 $scope.userMessage="";
+                $scope.editCircleLock=true; //stop admin from editing circle curing game
                 $scope.setCircleDB();
                 $scope.setNextCircleDB();
+                $scope.setClockDB();
                 gameClock = $interval(function(){
                     console.log($scope.timerCount);
                    $scope.timerCount++;
                    $scope.moveCircleTimer--;
+                   $scope.updateClockDB();
                    $scope.getInCircle();
                    if($scope.timerCount % $scope.moveCircleInterval == 0){
                     $scope.moveCircleTimer = $scope.moveCircleInterval;
@@ -241,6 +266,8 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi, 
             $scope.moveTime = false;
             $scope.updateCircleDB();
             $scope.updateNextCircleDB();
+            $scope.updateClockDB();
+            $scope.editCircleLock = false;
         },
         positionReady: function(position){
             $scope.map.center.latitude = position.coords.latitude;
@@ -267,20 +294,25 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi, 
                 long: $scope.circle.center.longitude, radius: $scope.circle.radius});
         },
         setNextCircleDB: function(){  
-            console.log($scope.model.matchName);
             baseRef.child('matches/' + $scope.model.matchName + '/gameObjects/nextCircle/').set({lat: $scope.nextCircle.center.latitude, 
                 long: $scope.nextCircle.center.longitude, radius: $scope.nextCircle.radius});
         },
         updateCircleDB: function(){  //update is slightly different than set
-            console.log($scope.model.matchName);
             baseRef.child('matches/' + $scope.model.matchName + '/gameObjects/circle/').update({lat: $scope.circle.center.latitude, 
                 long: $scope.circle.center.longitude, radius: $scope.circle.radius});
         },
         updateNextCircleDB: function(){  
-            console.log($scope.model.matchName);
             baseRef.child('matches/' + $scope.model.matchName + '/gameObjects/nextCircle/').update({lat: $scope.nextCircle.center.latitude, 
                 long: $scope.nextCircle.center.longitude, radius: $scope.nextCircle.radius});
         },
+        setClockDB: function(){  
+            //console.log($scope.model.matchName);
+            baseRef.child('matches/' + $scope.model.matchName + '/clock').set({time: $scope.moveCircleTimer});
+        },
+        updateClockDB: function(){  
+            //console.log($scope.model.matchName);
+            baseRef.child('matches/' + $scope.model.matchName + '/clock').update({time: $scope.moveCircleTimer});
+        }
     }); //.init();
 
 

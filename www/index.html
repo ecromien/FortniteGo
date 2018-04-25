@@ -104,8 +104,9 @@
                     <form role="form" >
                         <fieldset>
                             <legend>FortniteGo Prototype</legend>
-                        
+<!--</div ng-hide="!isAdmin">-->
                             <div ng-hide="!showEditCircle">
+                 
                                 <div class="form-group">
                                     <label>Change Start Position</label><br>
                                     <button ng-click="moveCircle(0,1)">Up</button><br>
@@ -120,19 +121,26 @@
                                     <button ng-click="resizeCircle(20/21)" >Shrink</button>                        
                                 </div>
                             </div>
+                        <div ng-hide="!isAdmin || editCircleLock">
                             <div class="form-group">
                                 <label>Edit Circle</label>
                                 <ui-switch ng-model='showEditCircle'></ui-switch>
-                            </div>     
+                            </div>   
+                        </div>  
                         </fieldset>
+                    <div ng-hide="!isAdmin">
                         <button ng-click="startMatch()">Start Match</button><br>
                         <button ng-click="reset()">Reset</button><br>
+
+                    </div>
+<!-- debug::::::::::::::::::::::::::::::::::::::::::::::::
                         <p>distance is: {{dist}}</p>
                         <p>time is: {{timerCount}}</p>
                         <p>lat is {{nextCircle.center.latitude}}</p>
                         <p>long is {{nextCircle.center.longitude}}</p>
                         <p>health: {{health}}</p>
                         </form>
+                    -->
                     <form>     
                         <input placeholder="Enter match name" ng-model="model.matchName"/>
                         <button ng-click="findMatch(model.matchName)">Join Match</button> 
