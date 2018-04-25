@@ -8,19 +8,25 @@ var app = angular.module("myapp", [
     // final pourpose to integrate gestures into default ui interactions like
     // opening sidebars, turning switches on/off ..
     'mobile-angular-ui.gestures',
-    'uiGmapgoogle-maps'
+    'uiGmapgoogle-maps',
+    'firebase',
 ])
 
 app.config(function (uiGmapGoogleMapApiProvider) {
     uiGmapGoogleMapApiProvider.configure({
-        key: 'AIzaSyBoBXUS4ihroKN-luPCWxEqPBlqgIEafdk',
+        key: 'AIzaSyC0CVr2hW0V95VScenMs_j-iVYlj48yliE',
         v: '3.17',
         libraries: 'weather,geometry,visualization'
     });
 });
 
-app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi) {
+app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi, $firebaseObject) {
     var gameClock;
+    var baseRef;
+    //cant do this on client side js...
+    //const functions = require('firebase-functions');
+    //const admin = require('firebase-admin');
+    //admin.initializeApp(functions.config().firebase);
     angular.extend($scope, {
         init: function () {
             uiGmapGoogleMapApi.then($scope.mapsReady);
@@ -32,12 +38,34 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi) 
             }
 
         },
+        initializeFirebase: function(){
+            baseRef = new Firebase("https://fortnitego-7ed79.firebaseio.com/");
+            
+            //var ref = new Firebase("https://fortnitego-7ed79.firebaseio.com/"); //  + $scope.sKey + "/"
+            //$scope.matches = $firebaseObject(ref);  
+        },
+        model: {},
+        initializeStorage: function () {
+            sMd5 = CryptoJS.MD5($scope.model.uname + $scope.model.password + "topSecret");
+            localStorage.setItem("sMD5", sMd5);
+            $scope.sKey = localStorage.getItem("sMD5");
+            $scope.initializeFirebase();
+            //$scope.init();
+            $scope.init();
+        },
         deviceReady: function(){
         },
-        mapsReady: function (maps) {
-            var nextCircleById = document.getElementById("nextCircleId");
-            console.log(nextCircleById.getCenter().lat());
-            $scope.testLoc = nextCircleById.getCenter().lat();
+        mapsReady: function (map) {
+            //var nextCircleById = document.getElementById("nextCircleId");
+            //maps.event.addListenerOnce(maps, 'idle', function() {
+                //maps.event.trigger(maps, 'resize');
+            //});
+            //console.log('here');
+            //******************* 
+            // tried some stuff to get grey maps after hiding fixed but didnt work
+            //***************** 
+            google.maps.event.trigger(map, "resize");
+
         },
         userMessage: "Edit circle then hit start match.",
         map: { center: { latitude: 45, longitude: -73 }, zoom: 14 }, //initalize map location structure
@@ -57,8 +85,53 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi) 
         latMove: 0,
         moveDist: 0,
         moveTime: false,
-        startMatch: function(){
+        existsMessage: "",
+        isAdmin: false,
+        createNewMatch: function(matchName){
+           // $scope.matches[uuid.v4()] = { name: matchName};
+           //  $scope.matches.$save();
+            baseRef.child('matches/' + matchName).set({name: matchName, admin: $scope.model.uname});
+            baseRef.child('matches/' + matchName + '/players/' + $scope.model.uname).set({name: $scope.model.uname, status: 'alive'});
+            $scope.isAdmin = true;
+            //$scope.matchName = matchName;
+        },
+        findMatch: function(matchName){
+            baseRef.child('matches/' + matchName + '/name').once("value", snapshot => {
+                const mat = snapshot.val();
+                if (mat){
+                    $scope.existsMessage="joining match...";
+                    baseRef.child('matches/' + matchName + '/players/' + $scope.model.uname).set({name: $scope.model.uname, status: 'alive'});
+                    $scope.existsMessage="Match Joined!";
+                    $scope.particpateInMatch(matchName);
+                }else{
+                    $scope.existsMessage="Match not found";
+                }
+             })
+        },
+        particpateInMatch: function(matchName){ //for non admin players
+            //firebase listener event
+            baseRef.child('matches/' + matchName + '/gameObjects').on("value", snapshot => {
+                const gameObj = snapshot.val();
+                $scope.userMessage = "Match Underway";
+                if (gameObj){
+                    $scope.circle.center.latitude = gameObj.circle.lat;
+                    $scope.circle.center.longitude =  gameObj.circle.long;
+                    $scope.circle.radius = gameObj.circle.radius;
+                    $scope.nextCircle.center.latitude = gameObj.nextCircle.lat;
+                    $scope.nextCircle.center.longitude =  gameObj.nextCircle.long;
+                    $scope.nextCircle.radius = gameObj.nextCircle.radius;
+                    console.log($scope.circle.radius); //for debug
+                    $scope.getInCircle(); //check if in circle
+                }else{
+                    $scope.existsMessage="Match Not Yet Started";
+                }
+             });
+           
+        },
+        startMatch: function(){ //for admin to run
                 $scope.userMessage="";
+                $scope.setCircleDB();
+                $scope.setNextCircleDB();
                 gameClock = $interval(function(){
                     console.log($scope.timerCount);
                    $scope.timerCount++;
@@ -67,9 +140,11 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi) 
                    if($scope.timerCount % $scope.moveCircleInterval == 0){
                     $scope.moveCircleTimer = $scope.moveCircleInterval;
                     $scope.setNextCircle();
+                    $scope.updateNextCircleDB();
                    }
                    if($scope.moveTime){
                     $scope.moveStorm();
+                    $scope.updateCircleDB();
                     }
                },1000)
         },
@@ -164,6 +239,8 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi) 
             $scope.moveCircleTimer = $scope.moveCircleInterval;
             $scope.userMessage = "Edit circle then hit start.";
             $scope.moveTime = false;
+            $scope.updateCircleDB();
+            $scope.updateNextCircleDB();
         },
         positionReady: function(position){
             $scope.map.center.latitude = position.coords.latitude;
@@ -183,8 +260,28 @@ app.controller("mycontroller", function ($scope, $interval, uiGmapGoogleMapApi) 
             posMarker[idKey] = 0; // have to add this for 'preformace'
             $scope.markers[0] = posMarker;
             $scope.$apply();
-        }
-    }).init();
+        },
+        setCircleDB: function(){ 
+            console.log($scope.model.matchName); 
+            baseRef.child('matches/' + $scope.model.matchName + '/gameObjects/circle/').set({lat: $scope.circle.center.latitude, 
+                long: $scope.circle.center.longitude, radius: $scope.circle.radius});
+        },
+        setNextCircleDB: function(){  
+            console.log($scope.model.matchName);
+            baseRef.child('matches/' + $scope.model.matchName + '/gameObjects/nextCircle/').set({lat: $scope.nextCircle.center.latitude, 
+                long: $scope.nextCircle.center.longitude, radius: $scope.nextCircle.radius});
+        },
+        updateCircleDB: function(){  //update is slightly different than set
+            console.log($scope.model.matchName);
+            baseRef.child('matches/' + $scope.model.matchName + '/gameObjects/circle/').update({lat: $scope.circle.center.latitude, 
+                long: $scope.circle.center.longitude, radius: $scope.circle.radius});
+        },
+        updateNextCircleDB: function(){  
+            console.log($scope.model.matchName);
+            baseRef.child('matches/' + $scope.model.matchName + '/gameObjects/nextCircle/').update({lat: $scope.nextCircle.center.latitude, 
+                long: $scope.nextCircle.center.longitude, radius: $scope.nextCircle.radius});
+        },
+    }); //.init();
 
 
 });

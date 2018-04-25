@@ -22,6 +22,13 @@
     <script src='js/angular-google-maps.min.js'></script>
     <script src='cordova.js'></script>
     <script src="form.js"></script>
+    <!-- firebase angular code -->
+    <script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
+    <script src="https://cdn.firebase.com/libs/angularfire/1.0.0/angularfire.js"></script>
+    <!-- crypto hash -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/core.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/md5.js"></script>
+    <script src="js/uuid.js"></script>
     <style>
         .angular-google-map-container { height: 400px; }
     </style>
@@ -34,115 +41,105 @@
 
    <div class="scrollable">
         <div class="scrollable-content section">
-            <ui-gmap-google-map center='map.center' zoom='map.zoom'>
-                <ui-gmap-circle id="stormCircleId" options="{draggable: true}" center='circle.center'
-                    radius='circle.radius'
-                      fill='{
-                    color: "#990099",
-                    opacity: 0.0
-                }'
+            <div ng-hide="sKey != null">
+                <form ng-submit="initializeStorage()">
+                    <input placeholder="enter your phone number or email" ng-model="model.uname" />
+                    <input type="password" placeholder="enter a password" ng-model="model.password" />
+                    <button type="submit">login</button>
+                </form>
+            </div>
+           
+                <ui-gmap-google-map center='map.center' zoom='map.zoom'>
+                    <ui-gmap-circle id="stormCircleId" options="{draggable: true}" center='circle.center'
+                        radius='circle.radius'
+                        fill='{
+                        color: "#990099",
+                        opacity: 0.0
+                    }'
 
-            
-                  stroke='{
-                    color: "#990099",
-                    weight: 2,
-                    opacity: 1 }'
-                      clickable='true'
-                      draggable='false'
-                     editable='false'
-                      visible='true'
-                  >
-                  </ui-gmap-circle>
-                  
-                  <ui-gmap-circle id="nextCircleId" options="{draggable: true}" center='nextCircle.center'
-                    radius='nextCircle.radius'
-                      fill='{
-                    color: "#0000ff",
-                    opacity: 0.1
-                }'
-
-            
-                  stroke='{
-                    color: "0000ff",
-                    weight: 2,
-                    opacity: 1 }'
-                     clickable='true'
-                      draggable='false'
-                      editable='false'
-                      visible='true'
-                  >
-                  </ui-gmap-circle>
-                  
-
-                  <ui-gmap-markers
-                        models="markers" coords="'self'" icon="'icon'"
-                      />
-                  </ui-gmap-markers>
-            </ui-gmap-google-map>
-            <h2>{{userMessage}}</h2>
-            <h3>health: {{health}}</h3>
-            <h3>Next Circle In: {{moveCircleTimer}}</h3>
-            <form role="form" ng-submit='login()'>
-                <fieldset>
-                    <legend>FortniteGo Prototype</legend>
-                    <!--
-                   <div ng-hide="!showLatLong">
-
-                        <div class="form-group has-success has-feedback">
-                            <label>map latitude</label>
-                            <input ng-model="map.center.latitude" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>map longitude</label> 
-                            <input ng-model="map.center.longitude" class="form-control">                            
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Show Latitude and Longitude</label>
-                        <ui-switch ng-model='showLatLong'></ui-switch>
-                    </div>
+                
+                    stroke='{
+                        color: "#990099",
+                        weight: 2,
+                        opacity: 1 }'
+                        clickable='true'
+                        draggable='false'
+                        editable='false'
+                        visible='true'
+                    >
+                    </ui-gmap-circle>
                     
-                -->
-                    <div ng-hide="!showEditCircle">
-                        <div class="form-group">
-                            <label>Change Start Position</label><br>
-                            <button ng-click="moveCircle(0,1)">Up</button><br>
-                            <button ng-click="moveCircle(-1,0)">Left</button>
-                            <button ng-click="moveCircle(1,0)">Right</button><br>
-                            <button ng-click="moveCircle(0,-1)">Down</button>
-                        </div>
-                        <div class="form-group">
-                            <label>Change Starting Circle Radius</label> 
-                            <input ng-model="circle.radius" class="form-control">  
-                            <button ng-click="resizeCircle(21/20)" >Grow</button>
-                            <button ng-click="resizeCircle(20/21)" >Shrink</button>                        
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Edit Circle</label>
-                        <ui-switch ng-model='showEditCircle'></ui-switch>
-                    </div>     
-                </fieldset>
-                <button ng-click="startMatch()">Start Match</button><br>
-                <button ng-click="reset()">Reset</button><br>
-                <p>distance is: {{dist}}</p>
-                <p>time is: {{timerCount}}</p>
-                <p>lat is {{nextCircle.center.latitude}}</p>
-                <p>long is {{nextCircle.center.longitude}}</p>
-                <p>health: {{health}}</p>
-                <!--hr>
-                    <div class="form-group">
-                    <label>my lat</label>
-                    <input ng-model="mylat" class="form-control">
-                    <label>my longitude</label>
-                    <input ng-model="myLong" class="form-control">
-                <button class="btn btn-primary btn-block">
-                    Login
-                </button>
+                    <ui-gmap-circle id="nextCircleId" options="{draggable: true}" center='nextCircle.center'
+                        radius='nextCircle.radius'
+                        fill='{
+                        color: "#0000ff",
+                        opacity: 0.1
+                    }'
 
-                <div ui-content-for="navbarAction">
-                    <a class='btn' ng-click='login()'>Login</a>
-               </div -->           </form>
+                
+                    stroke='{
+                        color: "0000ff",
+                        weight: 2,
+                        opacity: 1 }'
+                        clickable='true'
+                        draggable='false'
+                        editable='false'
+                        visible='true'
+                    >
+                    </ui-gmap-circle>
+                    
+
+                    <ui-gmap-markers
+                            models="markers" coords="'self'" icon="'icon'"
+                        />
+                    </ui-gmap-markers>
+                </ui-gmap-google-map>
+                <!-- I would intially hide the map too but it messed
+                    it up (would go grey until you full screen it,
+                    and couldnt find a solution that worked) -->
+                <div ng-hide="sKey == null">
+                    <h2>{{userMessage}}</h2>
+                    <h3>health: {{health}}</h3>
+                    <h3>Next Circle In: {{moveCircleTimer}}</h3>
+                    <form role="form" >
+                        <fieldset>
+                            <legend>FortniteGo Prototype</legend>
+                        
+                            <div ng-hide="!showEditCircle">
+                                <div class="form-group">
+                                    <label>Change Start Position</label><br>
+                                    <button ng-click="moveCircle(0,1)">Up</button><br>
+                                    <button ng-click="moveCircle(-1,0)">Left</button>
+                                    <button ng-click="moveCircle(1,0)">Right</button><br>
+                                    <button ng-click="moveCircle(0,-1)">Down</button>
+                                </div>
+                                <div class="form-group">
+                                    <label>Change Starting Circle Radius</label> 
+                                    <input ng-model="circle.radius" class="form-control">  
+                                    <button ng-click="resizeCircle(21/20)" >Grow</button>
+                                    <button ng-click="resizeCircle(20/21)" >Shrink</button>                        
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Edit Circle</label>
+                                <ui-switch ng-model='showEditCircle'></ui-switch>
+                            </div>     
+                        </fieldset>
+                        <button ng-click="startMatch()">Start Match</button><br>
+                        <button ng-click="reset()">Reset</button><br>
+                        <p>distance is: {{dist}}</p>
+                        <p>time is: {{timerCount}}</p>
+                        <p>lat is {{nextCircle.center.latitude}}</p>
+                        <p>long is {{nextCircle.center.longitude}}</p>
+                        <p>health: {{health}}</p>
+                        </form>
+                    <form>     
+                        <input placeholder="Enter match name" ng-model="model.matchName"/>
+                        <button ng-click="findMatch(model.matchName)">Join Match</button> 
+                        <button type="submit" ng-click="createNewMatch(model.matchName)">Create new match</button>
+                        <p>{{existsMessage}}</p>
+                    </form>
+            </div>
         </div>
     </div>
 </body>
